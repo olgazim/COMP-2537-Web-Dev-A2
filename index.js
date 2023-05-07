@@ -45,10 +45,50 @@ app.use(session({
     resave: true
 }));
 
+function isVallidSession(req) {
+    return req.session.authenticated;
+}
+
+function validateSession(req, res, next) {
+    if (isVallidSession) {
+        next();
+    } else {
+        req.redirect("home");
+    }
+}
+
+function isAdmin(req) {
+    console.log("isAdmin");
+    console.log(req.session);
+    if (req.session.user_role == "admin") {
+        return true;
+    }
+    return false;
+}
+
+function adminAuthorization(req, res, next) {
+    if (!isAdmin(req)) {
+        var target = "/";
+        res.status(403);
+        res.render("error-page", {errorMsg: "Not Authorized.", target: target});
+        return;
+    }
+    else {
+        next();
+    }
+}
+
 
 app.get('/', (req, res) => {
-    res.render("home");
+    if (req.session.authenticated) {
+        const username = req.session.username;
+        res.render("home-logged-in", {userName: username});
+    } else {
+
+        res.render("home");
+    }
 });
+
 
 app.get("/nosql-injection", async (req, res) => {
     var username = req.query.user;
@@ -179,6 +219,7 @@ app.get("/login", (req, res) => {
 
 app.post('/login', async (req, res) => { 
     console.log("inside login")
+    console.log(req.body);
     var email = req.body.email;
     var password = req.body.password;
     
@@ -217,10 +258,10 @@ app.post('/login', async (req, res) => {
     }
 });
 
+app.use("/loggedIn", validateSession);
 app.get("/loggedIn", (res, req) => {
-    if(!req.session.authenticated) {
-        res.redirect('/login');
-    }
+    console.log("loggedin");
+    console.log(req.session.user_role);
     res.redirect("/members");
 })
 
@@ -230,14 +271,19 @@ app.get("/members", (req, res) => {
         console.log("no session");
     } else {
     console.log("inside members");
-    const randomNumber = Math.floor(Math.random() * 3) + 1;
-    const image = `${randomNumber}.jpg`;
-    const imagePath = "/images/" + image;
 
     // retrieve the username from the session variable
         const username = req.session.username;
-        res.render("members", { userName: username, target: imagePath });
+        res.render("members", { userName: username});
     }
+});
+
+app.use("/admin", validateSession, adminAuthorization);
+app.get("/admin", async (req, res) => {
+    const result = await userCollection.find({}).project({ username: 1, email: 1, user_role: 1 }).toArray();
+
+    console.log(result)
+    res.render("admin-dashboard", { users: result });
 });
 
 app.get("/logout", (req, res) => {
