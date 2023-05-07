@@ -1,10 +1,37 @@
+<!-- Header -->
 <%- include("templates/header") %>
-    <h1>Hello</h1>
-    <p>Enter your personal details and start journey with us.</p>
-    <form action="/signup" method="POST">
-        <input name='user_name' type='text' placeholder='Enter your name'>
-        <input name='email' type='text' placeholder='Enter email'>
-        <input name='password' type='password' placeholder='Enter password'>
-        <button>Submit</button>
-    </form>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <form class="text-center" action="/signup" method="POST">
+                    <h1 class="h2 mb-3 fw-normal">Hello</h1>
+                    <p>Enter your personal details and start journey with us.</p>
+                    <!-- Email input -->
+                    <div class="form-floating mb-3">
+                        <input name="user_name" type="text" class="form-control" id="floatingInput" placeholder="Enter your name">
+                        <label for="floatingInput">Name</label>
+                    </div>
+                    <!-- Email input -->
+                    <div class="form-floating mb-3">
+                        <input name="email" type="email" class="form-control" id="floatingInput" placeholder="Enter email">
+                        <label for="floatingInput">Email address</label>
+                    </div>
+                    <!-- Password input -->
+                    <div class="form-floating mb-3">
+                        <input name="password" type="password" class="form-control" id="floatingPassword"
+                            placeholder="Enter password">
+                        <label for="floatingPassword">Password</label>
+                    </div>
+                    <!-- Submit button -->
+                    <button class="w-100 btn btn-lg btn-primary mt-3 mb-3" type="submit">Sign up</button>
+                    <!-- Register button -->
+                    <div class="text-center">
+                        <p>Already a member? <a href="login">Log in</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Footer -->
 <%- include("templates/footer") %>
