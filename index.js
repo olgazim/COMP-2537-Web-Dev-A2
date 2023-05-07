@@ -29,13 +29,13 @@ const node_session_secret = process.env.NODE_SESSION_SECRET;
 var { database } = include('databaseConnection');
 const userCollection = database.db(mongodb_database).collection('users');
 var mongoStore = MongoStore.create({
-    mongoUrl: `mongodb+srv://${mongodb_user}:${mongodb_password}@${mongodb_host}/a2_sessions`,
+    mongoUrl: `mongodb+srv://${mongodb_user}:${mongodb_password}@${mongodb_host}/sessions`,
     crypto: {
         secret: mongodb_session_secret
     }
 })
 
-
+app.set('view engine', 'ejs');
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: false })); // built-in middleware func
 app.use(session({
@@ -47,7 +47,7 @@ app.use(session({
 
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + "/index.html");
+    res.render("home");
 });
 
 app.get("/nosql-injection", async (req, res) => {
@@ -93,19 +93,12 @@ app.get('/signupFailure', (req, res) => {
     } else if (missingParam == 7) {
         errorMsg =  "Password is missing. Please, try again";
     } 
-    fs.readFile(__dirname + "/pages/error-page.html", "utf8", (err, data) => {
-            // Replace the placeholder with the error message
-        var modifiedData = data.replace("{errorMsg}", errorMsg);
-        modifiedData = modifiedData.replace("{target}", target);
-
-            // Send the modified content to the client
-            res.send(modifiedData);
-    });
+    res.render("error-page", { errorMsg: errorMsg, target: target });
 });
 
 
 app.get("/signup",  (req, res) => { 
-    res.sendFile(__dirname + "/pages/signup.html");
+    res.render("signup");
 });
 
 app.post('/signup', async (req, res) => { 
@@ -177,18 +170,11 @@ app.post('/signup', async (req, res) => {
 app.get('/loginFailure', (req, res) => {
     var errorMsg = "Invalid email or password.  Please, try again";
     var target = "/login";
-    fs.readFile(__dirname + "/pages/error-page.html", "utf8", (err, data) => {
-        // Replace the placeholder with the error message
-        var modifiedData = data.replace("{errorMsg}", errorMsg);
-        modifiedData = modifiedData.replace("{target}", target);
-        // Send the modified content to the client
-        res.send(modifiedData);
-    });
-
+    res.render("error-page", { errorMsg: errorMsg, target: target });
 });
 
 app.get("/login", (req, res) => { 
-    res.sendFile(__dirname + "/pages/login.html");
+    res.render("login");
 });
 
 app.post('/login', async (req, res) => { 
@@ -238,7 +224,6 @@ app.get("/loggedIn", (res, req) => {
     res.redirect("/members");
 })
 
-
 app.get("/members", (req, res) => { 
     if (!req.session.authenticated) {
         res.redirect('/');
@@ -250,36 +235,19 @@ app.get("/members", (req, res) => {
     const imagePath = "/images/" + image;
 
     // retrieve the username from the session variable
-    const username = req.session.username;
-    fs.readFile(__dirname + "/pages/members.html", "utf8", (err, data) => {
-        // Replace the placeholder with the error message
-        var modifiedData = data.replace("{userName}", username);
-        modifiedData = modifiedData.replace("{target}", imagePath);
-
-        // Send the modified content to the client
-        res.send(modifiedData);
-    });}
+        const username = req.session.username;
+        res.render("members", { userName: username, target: imagePath });
+    }
 });
-
 
 app.get("/logout", (req, res) => {
     req.session.destroy();
     res.redirect("/");
 });
 
-// // only for authenticated users
-// const authenticatedUsersOnly = (req, res, next) => {
-//   if (!req.session.GLOBAL_AUTHENTICATED) {
-//     return res.status(401).json({ error: 'Not authenticated' });
-//   }
-//   next();
-// };
-// app.use(authenticatedUsersOnly);
-
 app.get("*", (req, res) => { 
-    res.status(404).sendFile(__dirname + "/pages/page-not-found.html");
+    res.status(404).render("page-not-found");
 });
-
 
 app.listen(port, () => {
     console.log(`Application is listening at http://localhost:${port}`);
