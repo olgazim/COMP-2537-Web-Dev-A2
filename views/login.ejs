@@ -1,0 +1,9 @@
+<%- include("templates/header") %>
+    <h1>Welcome Back</h1>
+    <p>Please login with your personal info.</p>
+    <form action="/login" method="POST">
+        <input name='email' type='text' placeholder='Enter email'>
+        <input name='password' type='password' placeholder='Enter password'>
+        <button>Submit</button>
+    </form>
+<%- include("templates/footer") %>
