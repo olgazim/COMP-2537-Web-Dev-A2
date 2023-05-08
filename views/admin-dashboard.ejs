@@ -1,0 +1,40 @@
+<!-- Header -->
+<%- include("templates/header") %>
+
+    <h2> Users </h2>
+    <table class="table table-striped mt-4">
+        <thead>
+            <th scope="col"> User name </th>
+            <th scope="col"> Email  </th>
+            <th scope="col"> Role </th>
+            <th scope="col"> Change role </th>
+        </thead>
+        <tbody>
+            <% for(let i=0; i < users.length; i++) { 
+
+                var action = "Promote to Admin";
+                var role = "user";
+                var buttonClass = "btn-success";
+                var isDisabled = false;
+                if (users[i].is_admin) { 
+                    action =  "Denote to User";
+                    buttonClass = "btn-danger";
+                    role = "admin";
+                } 
+                if (users[i].email == currentUserEmail) { 
+                    isDisabled = true;
+                } %>
+                <%- include("templates/user", {user: users[i],
+                    role: role, 
+                    buttonClass: buttonClass, 
+                    isDisabled: isDisabled, 
+                    action: action}) %>
+
+            <% } %>
+        </tbody>
+    </table>
+
+<!----- JavaScript functions ----->
+<script src="../scripts/admin.js"></script>
+<!-- Footer -->
+<%- include("templates/footer") %>

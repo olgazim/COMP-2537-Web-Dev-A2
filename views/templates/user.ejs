@@ -1,0 +1,12 @@
+<tr>
+    <td><%= user.username %></td>
+    <td><%= user.email %></td>
+    <td><%= role %></td>
+    <td>
+        <form method="POST" action="admin/updateRole/<%= user._id %>">
+            <button type="submit" class= "btn <%= buttonClass %>" <%= isDisabled ? 'disabled' : '' %> <%= isDisabled ? 'disabled' : '' %> > 
+                <%= action %> 
+            </button>
+        </form>
+    </td>
+</tr>
