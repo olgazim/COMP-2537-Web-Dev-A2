@@ -6,6 +6,7 @@ const fs = require('fs');
 const bcrypt = require('bcrypt');
 const saltRounds = 12;
 const mongoose = require('mongoose');
+const { ObjectId } = require('mongodb');
 const MongoStore = require('connect-mongo');
 
 mongoose.connect
@@ -58,12 +59,7 @@ function validateSession(req, res, next) {
 }
 
 function isAdmin(req) {
-    console.log("isAdmin");
-    console.log(req.session);
-    if (req.session.user_role == "admin") {
-        return true;
-    }
-    return false;
+    return req.session.is_admin;
 }
 
 function adminAuthorization(req, res, next) {
@@ -198,13 +194,13 @@ app.post('/signup', async (req, res) => {
         username: username,
         email: email,
         password: hashedPassword,
-        user_role: "user"
+        is_admin: false
     });
     console.log("user inserted");
 
     req.session.authenticated = true;
     req.session.username = username;
-    req.session.user_role = "user";
+    req.session.is_admin = false;
     res.redirect('/members');
 });
 
@@ -221,7 +217,6 @@ app.get("/login", (req, res) => {
 
 app.post('/login', async (req, res) => { 
     console.log("inside login")
-    console.log(req.body);
     var email = req.body.email;
     var password = req.body.password;
     
@@ -237,20 +232,20 @@ app.post('/login', async (req, res) => {
         return;
     }
 
-    const user = await userCollection.find({email: email}).project({username: 1, email: 1, password:1, user_role: 1}).toArray();
+    const user = await userCollection.find({email: email}).project({username: 1, email: 1, password: 1, is_admin: 1}).toArray();
 
     if (!user) {
         console.log("User not found");
         res.redirect("/loginFailure");
         return;
     }
-    console.log(user);
     const passwordMatch = await bcrypt.compare(password, user[0].password);
 
     if (passwordMatch) {
         req.session.authenticated = true;
         req.session.username = user[0].username;
-        req.session.user_role = user[0].user_role;
+        req.session.email = email;
+        req.session.is_admin = user[0].is_admin;
         req.session.cookie.maxAge = expirationPeriod;
         res.redirect('/members');
         return;
@@ -264,7 +259,7 @@ app.post('/login', async (req, res) => {
 app.use("/loggedIn", validateSession);
 app.get("/loggedIn", (res, req) => {
     console.log("loggedin");
-    console.log(req.session.user_role);
+    console.log(req.session.is_admin);
     res.redirect("/members");
 })
 
@@ -283,10 +278,20 @@ app.get("/members", (req, res) => {
 
 app.use("/admin", validateSession, adminAuthorization);
 app.get("/admin", async (req, res) => {
-    const result = await userCollection.find({}).project({ username: 1, email: 1, user_role: 1 }).toArray();
+    const result = await userCollection.find({}).project({ username: 1, email: 1, is_admin: 1, _id:1}).toArray();
+    currentUserEmail = req.session.email;
+    res.render("admin-dashboard", { users: result, currentUserEmail: currentUserEmail});
+});
 
-    console.log(result)
-    res.render("admin-dashboard", { users: result });
+app.post("/admin/updateRole/:userId", async (req, res) => {
+    const userId = req.params.userId;
+    const user = await userCollection.findOne({ _id:  new ObjectId(userId) });
+    const is_admin = user.is_admin;
+    const is_admin_new = !is_admin;
+    await userCollection.updateOne(
+        { _id: new ObjectId(userId) },
+        { $set: { is_admin: is_admin_new } });
+    res.redirect("/admin");
 });
 
 app.get("/logout", (req, res) => {
