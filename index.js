@@ -45,12 +45,12 @@ app.use(session({
     resave: true
 }));
 
-function isVallidSession(req) {
+function isValidSession(req) {
     return req.session.authenticated;
 }
 
 function validateSession(req, res, next) {
-    if (isVallidSession) {
+    if (isValidSession) {
         next();
     } else {
         req.redirect("home");
@@ -198,11 +198,13 @@ app.post('/signup', async (req, res) => {
         username: username,
         email: email,
         password: hashedPassword,
+        user_role: "user"
     });
     console.log("user inserted");
 
     req.session.authenticated = true;
     req.session.username = username;
+    req.session.user_role = "user";
     res.redirect('/members');
 });
 
@@ -235,19 +237,20 @@ app.post('/login', async (req, res) => {
         return;
     }
 
-    const user = await userCollection.findOne({ email: email });
+    const user = await userCollection.find({email: email}).project({username: 1, email: 1, password:1, user_role: 1}).toArray();
 
     if (!user) {
         console.log("User not found");
         res.redirect("/loginFailure");
         return;
     }
-
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    console.log(user);
+    const passwordMatch = await bcrypt.compare(password, user[0].password);
 
     if (passwordMatch) {
         req.session.authenticated = true;
-        req.session.username = user.username;
+        req.session.username = user[0].username;
+        req.session.user_role = user[0].user_role;
         req.session.cookie.maxAge = expirationPeriod;
         res.redirect('/members');
         return;
