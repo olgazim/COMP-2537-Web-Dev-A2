@@ -8,6 +8,7 @@ const saltRounds = 12;
 const mongoose = require('mongoose');
 const { ObjectId } = require('mongodb');
 const MongoStore = require('connect-mongo');
+const url = require('url');
 
 mongoose.connect
 
@@ -36,6 +37,16 @@ var mongoStore = MongoStore.create({
     }
 })
 
+var adminLink = {};
+
+const navLinks = [
+    { name: "Home", link: "/" },
+    { name: "Members", link: "/members" },
+    { name: "404", link: "/nono" },
+    { name: "Admin", link: "/admin" }
+]
+
+
 app.set('view engine', 'ejs');
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: false })); // built-in middleware func
@@ -51,10 +62,10 @@ function isValidSession(req) {
 }
 
 function validateSession(req, res, next) {
-    if (isValidSession) {
+    if (isValidSession(req)) {
         next();
     } else {
-        req.redirect("home");
+        res.redirect("login");
     }
 }
 
@@ -65,8 +76,7 @@ function isAdmin(req) {
 function adminAuthorization(req, res, next) {
     if (!isAdmin(req)) {
         var target = "/";
-        res.status(403);
-        res.render("error-page", {errorMsg: "Not Authorized.", target: target});
+        res.status(403).render("error-page", {errorMsg: "Not Authorized. [403]", target: target});
         return;
     }
     else {
@@ -74,6 +84,19 @@ function adminAuthorization(req, res, next) {
     }
 }
 
+app.use("/", (req, res, next) => {
+    app.locals.navLinks = navLinks;
+    app.locals.currentURL = url.parse(req.url, true).pathname;
+    if (req.session.authenticated) {
+        app.locals.isNavBarShowed = true
+    } else {
+        app.locals.isNavBarShowed = false;
+    }
+
+    console.log("nav bar check");
+    console.log(app.locals.isNavBarShowed);
+    next();
+ });
 
 app.get('/', (req, res) => {
     if (req.session.authenticated) {
